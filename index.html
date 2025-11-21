@@ -77,9 +77,15 @@ function checkEway(){
   if(category === 'exempted' || category === 'non-gst'){
     return show('NO','Exempted / Non-GST goods do NOT require E-way Bill.');
   }
-  if(mode === 'non-motorised' || mode === 'hand-carry'){
-    return show('NO','Non-motorised / Hand-carry movement is fully exempt.');
-  }
+  // 2. Non-motorised / Hand-carry (HARD OVERRIDE)
+if(mode === 'non-motorised' || mode === 'hand-carry'){
+    resultBox.style.display = 'block';
+    resultBox.innerHTML =
+      '<strong>E-Way Bill Required: </strong><span class="no">NO</span>' +
+      '<br><br>Reason: Non-motorised / Hand-carry transport is exempt under Rule 138(14).';
+
+    return; // <-- THIS stops all other rules
+}
 
   // Special Transactions — mostly YES
   const specialYes = ['branch','jobwork','exhibition','testing','scrap','return','importexport','warranty'];
