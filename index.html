@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>GST E‑Way Bill Advisory- By CA Sumit Kr Bagra</title>
+  <title>GST E-Way Bill Advisory — Web Form</title>
   <style>
     :root{font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial;--card:#ffffff;--muted:#6b7280}
     body{background:#f3f4f6;margin:0;padding:24px;color:#111827}
@@ -29,7 +29,7 @@
 <body>
   <div class="container">
     <div class="card">
-      <h1>GST E‑Way Bill Advisory- By CA Sumit Kr Bagra</h1>
+      <h1>GST E‑Way Bill Advisory</h1>
       <p class="lead">Enter transaction details below — the tool returns whether an e‑way bill is required and why.</p>
 
       <form id="ewayForm">
@@ -154,10 +154,17 @@
         reasons.push('Category: Exempted / Non-GST → e-way generally NOT required')
       }
 
-      // 2. Non-motorised / Hand carry
-      if(mode === 'non-motorised' || mode === 'hand-carry'){
+      // 2. Non-motorised / Hand carry (hard override → ALWAYS NO)
+      if(mode === 'non-motorised'){
         required = false
-        reasons.push('Mode: Non-motorised / Hand-carry → e-way NOT required')
+        reasons.push('Mode: Non-motorised conveyance → Law exempts e-way bill → ALWAYS NOT required')
+        // stop further mandatory rules
+      }
+
+      if(mode === 'hand-carry'){
+        required = false
+        reasons.push('Mode: Hand-carry (personal movement) → ALWAYS NOT required')
+      }
       }
 
       // 3. Special transactions
