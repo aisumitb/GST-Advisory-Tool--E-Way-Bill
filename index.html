@@ -1,108 +1,242 @@
-Private Sub btnCheck_Click()
-    Dim invoiceValue As Double
-    Dim distance As Double
-    Dim mode As String
-    Dim category As String
-    Dim output As String
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GST E-Way Bill Advisory — Web Form</title>
+  <style>
+    :root{font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial;--card:#ffffff;--muted:#6b7280}
+    body{background:#f3f4f6;margin:0;padding:24px;color:#111827}
+    .container{max-width:880px;margin:0 auto}
+    .card{background:var(--card);border-radius:12px;box-shadow:0 6px 18px rgba(15,23,42,0.06);padding:20px}
+    h1{font-size:20px;margin:0 0 8px}
+    p.lead{color:var(--muted);margin-top:0;margin-bottom:18px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    label{display:block;font-size:13px;margin-bottom:6px}
+    input[type="number"],select{width:100%;padding:10px;border-radius:8px;border:1px solid #e5e7eb;font-size:14px}
+    .full{grid-column:1/-1}
+    .row{display:flex;gap:8px}
+    button{padding:10px 14px;border-radius:10px;border:0;font-weight:600;cursor:pointer}
+    button.primary{background:#0ea5a4;color:#fff}
+    button.ghost{background:transparent;border:1px solid #e5e7eb}
+    .result{margin-top:16px;padding:14px;border-radius:10px;background:#f8fafc;border:1px solid #e6eef0}
+    .result .yes{color:#065f46;font-weight:700}
+    .result .no{color:#b91c1c;font-weight:700}
+    pre.explain{background:#111827;color:#fff;padding:12px;border-radius:8px;overflow:auto}
+    @media (max-width:700px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>GST E‑Way Bill Advisory</h1>
+      <p class="lead">Enter transaction details below — the tool returns whether an e‑way bill is required and why.</p>
 
-    invoiceValue = CDbl(txtInvoiceValue.Value)
-    distance = CDbl(txtDistance.Value)
-    mode = cboMode.Value
-    category = cboCategory.Value
+      <form id="ewayForm">
+        <div class="grid">
+          <div>
+            <label for="invoice">Invoice value of goods (₹)</label>
+            <input id="invoice" type="number" min="0" step="0.01" placeholder="e.g. 60000" required />
+          </div>
 
-    ' Default result
-    output = "YES"
+          <div>
+            <label for="distance">Distance to be covered (km)</label>
+            <input id="distance" type="number" min="0" step="0.1" placeholder="e.g. 120" required />
+          </div>
 
-    ' Condition 1: Exempted or Non-GST goods → No E-way bill
-    If category = "Exempted" Or category = "Non-GST" Then
-        output = "NO"
-    End If
+          <div>
+            <label for="movement">Movement type</label>
+            <select id="movement" required>
+              <option value="interstate">Inter-state</option>
+              <option value="intrastate">Intra-state</option>
+            </select>
+          </div>
 
-    ' Condition 2: Invoice value less than 50,000 → No EWB (except for notified goods)
-    If invoiceValue < 50000 Then
-        If category <> "Notified Goods" Then
-            output = "NO"
-        End If
-    End If
+          <div>
+            <label for="mode">Mode of conveyance</label>
+            <select id="mode" required>
+              <option value="road">Road (Motorised)</option>
+              <option value="rail">Rail</option>
+              <option value="air">Air</option>
+              <option value="ship">Ship</option>
+              <option value="non-motorised">Non-motorised</option>
+              <option value="hand-carry">Hand carry / personal</option>
+            </select>
+          </div>
 
-    ' Condition 3: Distance under 50 km (within state) → No EWB for movement FROM/TO transporter
-    If distance < 50 Then
-        If mode = "Road" Then
-            ' still need to check value condition; skip for exempt
-            If invoiceValue < 50000 And category <> "Notified Goods" Then
-                output = "NO"
-            End If
-        End If
-    End If
+          <div>
+            <label for="category">Taxable category</label>
+            <select id="category" required>
+              <option value="gst">GST Goods</option>
+              <option value="exempted">Exempted</option>
+              <option value="non-gst">Non-GST</option>
+              <option value="notified">Notified Goods (always e-way)</option>
+            </select>
+          </div>
 
-    ' Condition 4: Non-motorised conveyance → No EWB
-    If mode = "Non-motorised" Then
-        output = "NO"
-    End If
+          <div>
+            <label for="special">Special transaction (optional)</label>
+            <select id="special">
+              <option value="none">-- None --</option>
+              <option value="branch-interstate">Branch transfer (interstate)</option>
+              <option value="jobwork-interstate">Job work (interstate)</option>
+              <option value="exhibition">Exhibition / approval basis</option>
+              <option value="repair-return">Goods repair & return</option>
+              <option value="testing">Testing / lab movement</option>
+              <option value="free-samples">Free samples</option>
+              <option value="warranty">Warranty replacements</option>
+              <option value="scrap">Scrap disposal</option>
+              <option value="customer-return">Customer return</option>
+              <option value="import-export">Import / export logistics</option>
+            </select>
+          </div>
 
-    ' Condition 5: Hand-carried goods (personal transport) → No EWB
-    If mode = "Hand Carry" Then
-        output = "NO"
-    End If
+          <div class="full">
+            <label>Notes</label>
+            <div style="font-size:13px;color:var(--muted)">Rules implemented: invoice &gt; ₹50,000 → e‑way required; exempted/non‑GST & non‑motorised/hand‑carry → no e‑way; notified goods & listed special transactions → e‑way required; intra‑state distance &lt;50 km → generally no e‑way (subject to value/notified/special exceptions).</div>
+          </div>
 
-    ' Final Output
-        ' Condition 6: Special Transactions
-    Dim special As String
-    special = cboSpecial.Value
+        </div>
 
-    Select Case special
-        Case "Branch transfer (interstate)", _
-             "Job work (interstate)", _
-             "Exhibition/approval basis", _
-             "Testing/lab movement", _
-             "Scrap disposal", _
-             "Customer return", _
-             "Import/export logistics", _
-             "Warranty replacements"
-                output = "YES"
-        Case "Goods repair & return"
-                If invoiceValue > 50000 Then output = "YES" Else output = "NO"
-        Case "Free samples"
-                If invoiceValue > 50000 Then output = "YES" Else output = "NO"
-    End Select
+        <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+          <button type="button" class="primary" id="checkBtn">Check E‑Way Bill</button>
+          <button type="button" class="ghost" id="clearBtn">Clear</button>
+        </div>
 
-    lblResult.Caption = "E-Way Bill Required: " & output
+        <div id="result" class="result" style="display:none;margin-top:12px"></div>
 
-End Sub
+      </form>
 
-Private Sub btnClear_Click()
-    txtInvoiceValue.Value = ""
-    txtDistance.Value = ""
-    cboMode.Value = ""
-    cboCategory.Value = ""
-    lblResult.Caption = ""
-End Sub
+      <details style="margin-top:16px">
+        <summary style="cursor:pointer">How this tool decides (click to open)</summary>
+        <pre class="explain">Decision logic (summary):
 
-Private Sub UserForm_Initialize()
-    cboMode.Clear
-    cboMode.AddItem "Road"
-    cboMode.AddItem "Rail"
-    cboMode.AddItem "Air"
-    cboMode.AddItem "Ship"
-    cboMode.AddItem "Non-motorised"
-    cboMode.AddItem "Hand Carry"
+1) If Taxable category is "Exempted" or "Non-GST" → NO e-way (except where law otherwise notifies).
 
-    cboCategory.Clear
-    cboCategory.AddItem "GST Goods"
-    cboCategory.AddItem "Exempted"
-    cboCategory.AddItem "Non-GST"
-    cboCategory.AddItem "Notified Goods"
+2) If Mode is "Non-motorised" or "Hand carry" → NO e-way.
 
-    cboSpecial.Clear
-    cboSpecial.AddItem "Branch transfer (interstate)"
-    cboSpecial.AddItem "Job work (interstate)"
-    cboSpecial.AddItem "Exhibition/approval basis"
-    cboSpecial.AddItem "Goods repair & return"
-    cboSpecial.AddItem "Testing/lab movement"
-    cboSpecial.AddItem "Free samples"
-    cboSpecial.AddItem "Warranty replacements"
-    cboSpecial.AddItem "Scrap disposal"
-    cboSpecial.AddItem "Customer return"
-    cboSpecial.AddItem "Import/export logistics"
-End Sub
+3) If Special transaction is one of: Branch transfer (interstate), Job work (interstate), Exhibition/approval, Testing, Warranty replacements, Scrap disposal, Customer return, Import/export → YES.
+   - For "Goods repair & return" and "Free samples" this tool treats them as value-sensitive: invoice value > ₹50,000 → YES, else NO.
 
+4) If Taxable category is "Notified" → YES (treated as notified goods always requiring e-way).
+
+5) If Invoice value > ₹50,000 → YES (general threshold).
+
+6) If Invoice value < ₹50,000 and Movement is Intra-state and Distance &lt; 50 km → generally NO unless special / notified / value exceptions above apply.
+
+7) Reason text displayed to help compliance checks; this is an advisory tool — refer to official GST notifications for edge cases and recent updates.</pre>
+      </details>
+
+    </div>
+  </div>
+
+  <script>
+    // Helper: format currency
+    function fmt(n){return (Number(n)||0).toLocaleString('en-IN')}
+
+    const el = id => document.getElementById(id)
+    const resultBox = el('result')
+
+    function evaluate(){
+      const invoice = Number(el('invoice').value || 0)
+      const distance = Number(el('distance').value || 0)
+      const movement = el('movement').value
+      const mode = el('mode').value
+      const category = el('category').value
+      const special = el('special').value
+
+      let required = null
+      const reasons = []
+
+      // 1. Exempted / Non-GST
+      if(category === 'exempted' || category === 'non-gst'){
+        required = false
+        reasons.push('Category: Exempted / Non-GST → e-way generally NOT required')
+      }
+
+      // 2. Non-motorised / Hand carry
+      if(mode === 'non-motorised' || mode === 'hand-carry'){
+        required = false
+        reasons.push('Mode: Non-motorised / Hand-carry → e-way NOT required')
+      }
+
+      // 3. Special transactions
+      const alwaysYesSpecials = new Set(['branch-interstate','jobwork-interstate','exhibition','testing','warranty','scrap','customer-return','import-export'])
+      if(special !== 'none'){
+        if(alwaysYesSpecials.has(special)){
+          required = true
+          reasons.push('Special transaction: ' + el('special').selectedOptions[0].text + ' → e-way REQUIRED')
+        }else if(special === 'repair-return' || special === 'free-samples'){
+          if(invoice > 50000){ required = true; reasons.push('Special transaction value > ₹50,000 → e-way REQUIRED') }
+          else{ required = false; reasons.push('Special transaction but value ≤ ₹50,000 → e-way NOT required (subject to notification)') }
+        }
+      }
+
+      // 4. Notified goods
+      if(category === 'notified'){
+        required = true
+        reasons.push('Category: Notified goods → e-way REQUIRED')
+      }
+
+      // 5. Invoice threshold
+      if(invoice > 50000){ required = true; reasons.push('Invoice value > ₹50,000 → e-way REQUIRED') }
+
+      // 6. Distance / intra-state relaxation
+      if(movement === 'intrastate' && distance < 50){
+        // only set to NO if no higher-priority YES cause
+        if(!required){
+          required = false
+          reasons.push('Intra-state movement & distance < 50 km → e-way generally NOT required (unless exceptions apply)')
+        } else {
+          reasons.push('Intra-state & <50 km but other rule requires e-way → follow mandatory rule')
+        }
+      }
+
+      // Default: if still null, treat as NO
+      if(required === null) {
+        required = false
+        reasons.push('No rule triggered for mandatory e-way → treat as NOT required by default (verify with official notifications)')
+      }
+
+      // Build result UI
+      resultBox.style.display = 'block'
+      resultBox.innerHTML = ''
+
+      const h = document.createElement('div')
+      h.innerHTML = '<strong>E-Way Bill Required: </strong>' + (required ? '<span class="yes">YES</span>' : '<span class="no">NO</span>')
+      resultBox.appendChild(h)
+
+      const meta = document.createElement('div')
+      meta.style.marginTop = '8px'
+      meta.style.fontSize = '13px'
+      meta.style.color = '#374151'
+      meta.innerHTML = '<strong>Summary:</strong> Invoice ₹' + fmt(invoice) + ' • Distance ' + fmt(distance) + ' km • Movement: ' + (movement==='interstate'?'Inter-state':'Intra-state') + ' • Mode: ' + el('mode').selectedOptions[0].text + ' • Category: ' + el('category').selectedOptions[0].text
+      resultBox.appendChild(meta)
+
+      const ul = document.createElement('ul')
+      ul.style.marginTop = '10px'
+      ul.style.paddingLeft = '18px'
+      reasons.forEach(r=>{const li=document.createElement('li');li.textContent=r;ul.appendChild(li)})
+      resultBox.appendChild(ul)
+
+      const note = document.createElement('div')
+      note.style.marginTop='10px'
+      note.style.fontSize='12px'
+      note.style.color='#6b7280'
+      note.innerHTML = 'This is an advisory calculator. Always confirm with the latest GST notifications and state rules before dispatch.'
+      resultBox.appendChild(note)
+    }
+
+    el('checkBtn').addEventListener('click', evaluate)
+    el('clearBtn').addEventListener('click', ()=>{
+      el('ewayForm').reset(); resultBox.style.display='none'
+    })
+
+    // Small UX: set sensible defaults
+    window.addEventListener('load', ()=>{
+      el('invoice').value='0'
+      el('distance').value='0'
+    })
+  </script>
+</body>
+</html>
