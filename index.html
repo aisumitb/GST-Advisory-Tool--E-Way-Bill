@@ -13,19 +13,28 @@
   #result { margin-top:20px; padding:15px; display:none; font-size:18px; border-radius:8px; }
   .yes{ color:#c70000; font-weight:bold; }
   .no{ color:#008000; font-weight:bold; }
-  .site-footer {
-  margin-top: auto;
+  
+.site-footer {
+  margin-top: 20px;
   text-align: center;
   padding: 12px;
   font-size: 14px;
   background-color: #eaf7ee;
-  .visitor-counter{
-    text-align:right;
-    font-size:12px;
-    color:#777;
-    margin-top:4px;   /* small gap from footer */
-    margin-right:20px;
 }
+
+.visitor-counter {
+  text-align: right;
+  font-size: 12px;
+  color: #777;
+  margin-top: 4px;
+  margin-right: 20px;
+}
+  
+.review {
+  color: #9a6700;
+  font-weight: bold;
+}
+
 </style>
 <div style="text-align:center; margin-bottom:10px;">
     <img src="logo.png" alt="Logo" style="height:60px;">
@@ -138,62 +147,109 @@ document.getElementById("category")
 // Populate the dropdown on initial page load.
 updateSpecialTransactions();
 
-function checkEway(){
-  let invoice = Number(document.getElementById('invoice').value);
-  let mode = document.getElementById('mode').value;
-  let category = document.getElementById('category').value;
-  let special = document.getElementById('special').value;
-  
-  let result = document.getElementById('result');
 
-  
-if (category === "schedule3") {
+function checkEway() {
+  const invoice = Number(document.getElementById("invoice").value);
+  const mode = document.getElementById("mode").value;
+  const category = document.getElementById("category").value;
+  const special = document.getElementById("special").value;
+
+  // Validate essential selections.
+  if (!category) {
+    return show("NO", "Please select a taxable category first.");
+  }
+
+  // Schedule III: no e-way bill where the goods being
+  // transported are treated as no supply under Schedule III.
+  if (category === "schedule3") {
+    return show(
+      "NO",
+      "No e-way bill is required where the goods being transported are treated as no supply under Schedule III of the CGST Act, under Rule 138(14)(g)."
+    );
+  }
+
+  // Rule 138(14)(b): non-motorised conveyance.
+  if (mode === "non-motorised") {
+    return show(
+      "NO",
+      "No e-way bill is required where goods are transported by a non-motorised conveyance, under Rule 138(14)(b)."
+    );
+  }
+
+  // Hand-carry is not, by itself, a separate blanket exemption.
+  if (mode === "hand-carry") {
+    return show(
+      "REVIEW",
+      "Hand-carry is not automatically exempt. Check the actual conveyance, applicable exemptions and movement requirements before deciding."
+    );
+  }
+
+  if (!mode) {
+    return show("REVIEW", "Please select the mode of conveyance.");
+  }
+
+  if (document.getElementById("invoice").value === "" ||
+      !Number.isFinite(invoice) || invoice < 0) {
+    return show("REVIEW", "Please enter a valid invoice or consignment value.");
+  }
+
+  // Selected categories do not, by themselves, establish
+  // whether the goods qualify for a legal exemption.
+  if (category === "exempted") {
+    return show(
+      "REVIEW",
+      "Check whether the goods qualify for an applicable e-way bill exemption under Rule 138(14) and relevant notifications."
+    );
+  }
+
+  if (category === "non-gst") {
+    return show(
+      "REVIEW",
+      "Non-GST classification alone does not determine the e-way bill requirement. Check the goods and the applicable provisions."
+    );
+  }
+
+  // These transactions may have special rules or exceptions.
+  // Interstate job work from principal to job worker can require
+  // an e-way bill irrespective of value.
+  if (special === "jobwork") {
+    return show(
+      "REVIEW",
+      "Check whether the interstate principal-to-job-worker rule applies. Where applicable, an e-way bill is required irrespective of consignment value."
+    );
+  }
+
+  // General threshold: applicable subject to exceptions,
+  // special rules and state-specific requirements.
+  if (invoice > 50000) {
+    return show(
+      "REVIEW",
+      "Consignment value exceeds ₹50,000. An e-way bill is generally required, subject to applicable Rule 138 exemptions, special provisions and state-specific requirements."
+    );
+  }
+
+  // Not automatically exempt or mandatory merely because
+  // a special transaction has been selected.
   return show(
-    "NO",
-    "No e-way bill is required for goods treated as no supply under Schedule III of the CGST Act, as provided under Rule 138(14)(g)."
+    "REVIEW",
+    "Consignment value is ₹50,000 or less. Check applicable exceptions, special provisions and state-specific rules before concluding that an e-way bill is not required."
   );
 }
 
 
-  // HARD OVERRIDES — Always NO
-if(category === 'exempted' || category === 'non-gst'){
-    return show('NO','Exempted / Non-GST goods do NOT require E-way Bill.');
-}
+function show(status, reason) {
+  const result = document.getElementById("result");
 
-// HARD OVERRIDE — Non-motorised / Hand-carry
-if(mode === 'non-motorised' || mode === 'hand-carry'){
-    return show('NO','Non-motorised / Hand-carry transport is exempt under Rule 138(14).');
-}
+  result.style.display = "block";
 
-  // Special Transactions — mostly YES
-  const specialYes = ['branch','jobwork','exhibition','testing','scrap','return','importexport','warranty'];
-  if(specialYes.includes(special)){
-    return show('YES','Special transaction category mandates E-way Bill.');
-  }
+  const statusClass =
+    status === "YES" ? "yes" :
+    status === "NO" ? "no" : "review";
 
-  // Special: conditional
-  if(special === 'repair' || special === 'samples'){
-    return invoice > 50000 ? show('YES','Invoice exceeds ₹50k → Required.') : show('NO','Below ₹50k → Not required.');
-  }
-
-  // Large invoice rule
-  if(invoice > 50000){
-    return show('YES','Invoice above ₹50,000 → E-way bill mandatory.');
-  }
-
-  // Notified goods always require E-way bill
-  if(category === 'notified'){
-    return show('YES','Notified goods require E-way Bill irrespective of value.');
-  }
-
-  // Default
-  return show('NO','No mandatory condition triggered.');
-}
-
-function show(status,reason){
-  let result = document.getElementById('result');
-  result.style.display='block';
-  result.innerHTML = `<strong>E-Way Bill Required: </strong><span class="${status==='YES'?'yes':'no'}">${status}</span><br><br>${reason}`;
+  result.innerHTML =
+    `<strong>E-Way Bill Required: </strong>` +
+    `<span class="${statusClass}">${status}</span>` +
+    `<br><br>${reason}`;
 }
 
 function clearForm(){ location.reload(); }
