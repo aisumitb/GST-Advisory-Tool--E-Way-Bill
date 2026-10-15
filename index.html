@@ -68,21 +68,13 @@
   <option value="exempted">Exempted Goods</option>
   <option value="non-gst">Non-GST Goods</option>
   <option value="notified">Notified Goods</option>
+  <option value="schedule3">Neither Supply of Goods nor Services (Schedule III)</option>
 </select>
 
 <label>Special Transaction</label>
 <select id="special">
   <option value="">-- Select (Optional) --</option>
-  <option value="branch">Branch Transfer (Interstate)</option>
-  <option value="jobwork">Job Work (Interstate)</option>
-  <option value="exhibition">Exhibition / Approval Basis</option>
-  <option value="repair">Goods Repair & Return</option>
-  <option value="testing">Testing / Lab Movement</option>
-  <option value="samples">Free Samples</option>
-  <option value="warranty">Warranty Replacement</option>
-  <option value="scrap">Scrap Disposal</option>
-  <option value="return">Customer Return</option>
-  <option value="importexport">Import / Export Logistics</option>
+  
 </select>
 
 <button onclick="checkEway()">Check E-Way Bill Requirement</button>
@@ -92,11 +84,66 @@
 </div>
 
 <script>
+
+  
+const normalTransactions = [
+  { value: "branch", text: "Branch Transfer (Interstate)" },
+  { value: "jobwork", text: "Job Work (Interstate)" },
+  { value: "exhibition", text: "Exhibition / Approval Basis" },
+  { value: "repair", text: "Goods Repair & Return" },
+  { value: "testing", text: "Testing / Lab Movement" },
+  { value: "samples", text: "Free Samples" },
+  { value: "warranty", text: "Warranty Replacement" },
+  { value: "scrap", text: "Scrap Disposal" },
+  { value: "return", text: "Customer Return" },
+  { value: "importexport", text: "Import / Export Logistics" }
+];
+
+const scheduleIIITransactions = [
+  { value: "s3_employee", text: "Services by Employee to Employer" },
+  { value: "s3_court", text: "Services by Courts or Tribunals" },
+  { value: "s3_constitutional", text: "Specified Constitutional Functions and Duties" },
+  { value: "s3_funeral", text: "Funeral, Burial, Crematorium or Mortuary Services" },
+  { value: "s3_land", text: "Sale of Land" },
+  { value: "s3_building", text: "Sale of Building (Subject to Schedule II)" },
+  { value: "s3_claims", text: "Actionable Claims (Subject to Exclusions)" },
+  { value: "s3_non_taxable", text: "Goods Supplied Between Two Places Outside India" },
+  { value: "s3_warehouse", text: "Warehoused Goods Before Home Consumption Clearance" },
+  { value: "s3_sez", text: "Goods Warehoused in SEZ / FTWZ" },
+  { value: "s3_title", text: "Transfer of Documents of Title to Imported Goods" }
+];
+
+function updateSpecialTransactions() {
+  const category = document.getElementById("category").value;
+  const special = document.getElementById("special");
+
+  // Remember the selected value only if it exists in the new list.
+  const options = category === "schedule3"
+    ? scheduleIIITransactions
+    : normalTransactions;
+
+  special.innerHTML = '<option value="">-- Select (Optional) --</option>';
+
+  options.forEach(item => {
+    const option = document.createElement("option");
+    option.value = item.value;
+    option.textContent = item.text;
+    special.appendChild(option);
+  });
+}
+
+document.getElementById("category")
+  .addEventListener("change", updateSpecialTransactions);
+
+// Populate the dropdown on initial page load.
+updateSpecialTransactions();
+
 function checkEway(){
   let invoice = Number(document.getElementById('invoice').value);
   let mode = document.getElementById('mode').value;
   let category = document.getElementById('category').value;
   let special = document.getElementById('special').value;
+  
   let result = document.getElementById('result');
 
   // HARD OVERRIDES — Always NO
