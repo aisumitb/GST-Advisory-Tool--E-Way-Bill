@@ -146,6 +146,15 @@ function checkEway(){
   
   let result = document.getElementById('result');
 
+  
+if (category === "schedule3") {
+  return show(
+    "NO",
+    "No e-way bill is required for goods treated as no supply under Schedule III of the CGST Act, as provided under Rule 138(14)(g)."
+  );
+}
+
+
   // HARD OVERRIDES — Always NO
 if(category === 'exempted' || category === 'non-gst'){
     return show('NO','Exempted / Non-GST goods do NOT require E-way Bill.');
